@@ -1,12 +1,27 @@
-import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { AppDataSource } from "./data-source"
+import { MeasureType } from "./entities/enums/MeasureType"
+import { Measurement } from "./entities/Measurement"
 
-const server = createServer((req: IncomingMessage, res: ServerResponse) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain');
-    res.end('Hello, World!\n');
-});
+AppDataSource.initialize().then(async () => {
 
-const PORT = 3000;
-server.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}/`);
-});
+    console.log("Inserting a new measure into the database...")
+    const measure = new Measurement()
+    measure.customerCode = "teste"
+    measure.image = "teste2"
+    measure.measureType = MeasureType.GAS
+    measure.measureDatetime = new Date()
+    await AppDataSource.manager.save(measure)
+    console.log("Saved a new measure with id: " + measure.id)
+
+    console.log("Loading users from the database...")
+    const measurements = await AppDataSource.manager.find(Measurement)
+    console.log("Loaded measures: ", measurements)
+
+    for (const m of measurements) {
+        await AppDataSource.manager.remove(m);
+    }
+
+    const newMeasurements = await AppDataSource.manager.find(Measurement)
+    console.log("Loaded new measures: ", newMeasurements)
+
+}).catch(error => console.log(error))

@@ -1,21 +1,18 @@
 import { MeasureType } from './enums/MeasureType';
+import { Entity, PrimaryGeneratedColumn, Column } from "typeorm"
 
+
+@Entity()
 export class Measurement {
-    id?: number;
+    @PrimaryGeneratedColumn()
+    id: number;
+    @Column({ type: "text" })
     image: string;
+    @Column({ type: "varchar", length: 255 })
     customerCode: string;
+    @Column({ type: "timestamp" })
     measureDatetime: Date;
+    @Column({ type: "enum", enum: MeasureType })
     measureType: MeasureType;
 
-    constructor(
-        image: string,
-        customerCode: string,
-        measureDatetime: Date,
-        measureType: MeasureType
-    ) {
-        this.image = image;
-        this.customerCode = customerCode;
-        this.measureDatetime = measureDatetime;
-        this.measureType = measureType;
-    }
 }
