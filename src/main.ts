@@ -1,28 +1,21 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { MeasurementService } from './services/MeasurementService';
-import { Measurement } from './entities/Measurement';
-import { MeasureType } from './entities/enums/MeasureType';
-import { uploadImage } from './utils/api';
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from './app.module'
+// import { MeasurementService } from './services/MeasurementService'
+// import { Measurement } from './entities/Measurement'
+// import { MeasureType } from './entities/enums/MeasureType'
+// import { uploadImage } from './utils/api'
+
+//import { ApiService } from './services/ApiService'
+//import { uploadImage } from './services/ApiTest'
+
+// import { ImageService } from './services/ImageService'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
+  const app = await NestFactory.create(AppModule)
+  await app.listen(3000)
 
-  const measurementService = app.get<MeasurementService>(MeasurementService);
+  // const imageService = app.get<ImageService>(ImageService)
 
-  const measure = new Measurement();
-  measure.customerCode = 'teste';
-  measure.image = 'teste2';
-  measure.measureType = MeasureType.GAS;
-  measure.measureDatetime = new Date();
-
-  const result = await measurementService.add(measure);
-  console.log(result);
-
-  const findAll = await measurementService.findAll();
-  console.log(findAll);
-
-  uploadImage('src/utils/temp/jetpack.jpg');
+  // imageService.processImage()
 }
-bootstrap();
+bootstrap()

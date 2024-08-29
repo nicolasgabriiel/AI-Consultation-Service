@@ -1,17 +1,21 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from '@nestjs/common'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { ConfigModule } from '@nestjs/config'
 
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Measurement } from './entities/Measurement';
-import { MeasurementService } from './services/MeasurementService';
-import { MeasurementController } from './controllers/MeasurementController';
+import { TypeOrmModule } from '@nestjs/typeorm'
+import { Measurement } from './entities/Measurement'
+import { MeasurementService } from './services/MeasurementService'
+import { MeasurementController } from './controllers/MeasurementController'
+import { ImageService } from './services/ImageService'
+import { ApiService } from './services/ApiService'
+import { HttpModule } from '@nestjs/axios'
 
 @Module({
   imports: [
+    HttpModule,
     ConfigModule.forRoot({
-      isGlobal: true, // Torna as variáveis de ambiente acessíveis globalmente
+      isGlobal: true // Torna as variáveis de ambiente acessíveis globalmente
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -21,11 +25,17 @@ import { MeasurementController } from './controllers/MeasurementController';
       password: 'h737pptc',
       database: 'shopper',
       entities: [Measurement],
-      synchronize: true, // Sincroniza o schema do banco com as entidades, útil em desenvolvimento
+      synchronize: true // Sincroniza o schema do banco com as entidades, útil em desenvolvimento
     }),
-    TypeOrmModule.forFeature([Measurement]),
+    TypeOrmModule.forFeature([Measurement])
   ],
   controllers: [AppController, MeasurementController],
-  providers: [AppService, MeasurementService],
+  providers: [
+    AppService,
+    MeasurementService,
+    ImageService,
+    ApiService,
+    ApiService
+  ]
 })
 export class AppModule {}
