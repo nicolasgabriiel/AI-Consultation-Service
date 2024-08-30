@@ -16,22 +16,21 @@ export class MeasurementService {
     private imageService: ImageService
   ) {}
 
+  //Retorna todos os Measurements do DB
   async findAll(): Promise<Measurement[]> {
     return this.measurementRepo.find()
   }
-
+  // Retorna um Measurement com base no ID
   async findOne(id: number): Promise<Measurement> {
     return this.measurementRepo.findOneBy({ id })
   }
-
+  // Remove um Measurement com base no ID
   async remove(id: number): Promise<void> {
     await this.measurementRepo.delete(id)
   }
 
+  //Verifica dados e adiciona um Measurement no DB
   async add(measurementData: Measurement): Promise<Measurement> {
-    measurementData.measure_type = MeasureType[measurementData.measure_type as unknown as keyof typeof MeasureType]
-    measurementData.measure_datetime = new Date(measurementData.measure_datetime)
-
     const { image, customer_code, measure_datetime, measure_type } = measurementData
 
     if (!image || !customer_code || !measure_datetime || !measure_type) {
@@ -39,20 +38,32 @@ export class MeasurementService {
     }
 
     const base64Pattern = /^data:image\/(png|jpg|jpeg);base64,/
-    if (!base64Pattern.test(image)) {
+    if (!base64Pattern.test(measurementData.image)) {
       this.defaultHttpException(400, 'INVALID_DATA', 'Formato de Imagem Inválido')
     }
-
-    if (typeof measure_type === 'undefined' || ![MeasureType.WATER, MeasureType.GAS].includes(measure_type)) {
+    measurementData.measure_type = MeasureType[measurementData.measure_type as unknown as keyof typeof MeasureType]
+    if (
+      typeof measurementData.measure_type === 'undefined' ||
+      ![MeasureType.WATER, MeasureType.GAS].includes(measurementData.measure_type)
+    ) {
       this.defaultHttpException(400, 'INVALID_MEASURE_TYPE ', ' O Measure Type Informado é inválido')
     }
+
+    if (!this.isValidISODateTime(String(measurementData.measure_datetime))) {
+      this.defaultHttpException(
+        400,
+        'INVALID_DATA',
+        'A data não foi inserida no padrão ISO8601. Exemplo: "2025-01-01T16:30:00"'
+      )
+    }
+    measurementData.measure_datetime = new Date(measurementData.measure_datetime)
 
     const measureList = await this.findAll()
     for (const item of measureList) {
       if (
-        item.measure_datetime.getFullYear() == measure_datetime.getFullYear() &&
-        item.measure_datetime.getMonth() == measure_datetime.getMonth() &&
-        item.measure_type == measure_type
+        item.measure_datetime.getFullYear() == measurementData.measure_datetime.getFullYear() &&
+        item.measure_datetime.getMonth() == measurementData.measure_datetime.getMonth() &&
+        item.measure_type == measurementData.measure_type
       ) {
         this.defaultHttpException(409, 'DOUBLE_REPORT', ' Já existe uma leitura para este tipo no mês atual')
       }
@@ -64,24 +75,16 @@ export class MeasurementService {
       this.imageService.deleteImage(newMeasurement.internal_file_path)
     }
 
-    try {
-      newMeasurement.measure_uuid = this.createUuid()
-      const measure = this.measurementRepo.create(newMeasurement)
-      return this.measurementRepo.save(measure)
-    } catch (error) {
-      this.defaultHttpException(500, 'INTERNAL_SERVER_ERROR', 'INTERNAL SERVER ERROR')
-      console.log(error)
-    }
+    newMeasurement.measure_uuid = await this.createUuid()
+    const measure = await this.measurementRepo.create(newMeasurement)
+    return this.measurementRepo.save(measure)
   }
-
+  //Faz a atualização de um Measurement no DB
   async update(id: number, updateData: Measurement): Promise<Measurement> {
-    try {
-      await this.measurementRepo.update(id, updateData)
-      return this.measurementRepo.findOneBy({ id })
-    } catch (error) {
-      console.log(error)
-    }
+    await this.measurementRepo.update(id, updateData)
+    return this.measurementRepo.findOneBy({ id })
   }
+  // Busca um Measurement no DB com base no UUID
   async findOneByUuid(measure_uuid: string): Promise<Measurement | null> {
     const measure = this.measurementRepo.findOneBy({ measure_uuid })
     if (!measure) {
@@ -90,12 +93,17 @@ export class MeasurementService {
     return measure
   }
 
+  // Verifica e confirma os dados do Measurement
   async confirm(measureConfirm: ConfirmationMeasure) {
     if (!measureConfirm.confirmed_value || !measureConfirm.measure_uuid) {
       this.defaultHttpException(409, 'INVALID_DATA', 'Os dados fornecidos no corpo da requisição são inválidos')
     }
     if (!this.isUUIDv4(measureConfirm.measure_uuid)) {
       this.defaultHttpException(400, 'INVALID_DATA', 'O código GUID é inválido')
+    }
+    const hasNumber = typeof measureConfirm.confirmed_value === 'number'
+    if (!hasNumber) {
+      this.defaultHttpException(400, 'INVALID_DATA', 'O valor de confirmação deve ser um número')
     }
     const measure = await this.findOneByUuid(measureConfirm.measure_uuid)
 
@@ -107,10 +115,12 @@ export class MeasurementService {
     return await this.update(measure.id, measure)
   }
 
+  // Retorna uma lista e Measures com base no customer code e/ou measure type
   async findMeasuresByCustomer(customerCode: string, measureType?: string): Promise<Measurement[]> {
     if (measureType && !['WATER', 'GAS'].includes(measureType.toUpperCase())) {
       this.defaultHttpException(400, 'INVALID_TYPE', 'Tipo de medição não permitida')
     }
+
     let measures = await this.findAllMeasuresForCustomer(customerCode)
     if (measureType) {
       const newMeasureType = MeasureType[measureType.toUpperCase() as keyof typeof MeasureType]
@@ -124,17 +134,20 @@ export class MeasurementService {
     return measures
   }
 
+  //Retorna uma lista de Measurements com base no Customer code
   private async findAllMeasuresForCustomer(customer_code: string): Promise<Measurement[]> {
     return this.measurementRepo.findBy({ customer_code })
   }
 
+  //Cria um UUID
   createUuid(): string {
     return uuidv4()
   }
+  //Verifica se o UUID é válido
   isUUIDv4(uuid: string) {
     return validate(uuid) && version(uuid) === 4
   }
-
+  //Função padrão pra Http Exceptions
   defaultHttpException(HttpStatus: HttpStatus, errorCode: string, message: string): void {
     throw new HttpException(
       {
@@ -143,5 +156,12 @@ export class MeasurementService {
       },
       HttpStatus
     )
+  }
+  // Valida um DateTime no padrão ISO
+  isValidISODateTime(dateTimeString: string): boolean {
+    const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(Z|([+-]\d{2}:\d{2}))?$/
+    if (!regex.test(dateTimeString)) return false
+    const date = new Date(dateTimeString)
+    return !isNaN(date.getTime()) && date.toISOString().startsWith(dateTimeString.split('T')[0])
   }
 }

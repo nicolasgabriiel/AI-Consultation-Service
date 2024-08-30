@@ -9,6 +9,7 @@ import { Measurement } from 'src/entities/Measurement'
 @Injectable()
 export class ImageService {
   constructor(private readonly api: ApiService) {}
+  //Transforma a imagem em Base64 para um JPG e envia para o ApiService
   async processImage(measure: Measurement): Promise<Measurement> {
     const base64Data = measure.image.replace(/^data:image\/\w+;base64,/, '')
 
@@ -21,6 +22,7 @@ export class ImageService {
     console.log(filePath)
     return this.api.sendImageForGemini(measure, filePath)
   }
+  //Deleta a imagem criada em JPG da pasta utils/temp
   async deleteImage(filePath: string) {
     try {
       fs.unlinkSync(filePath)
@@ -30,6 +32,7 @@ export class ImageService {
       throw new Error('Erro ao deletar a imagem')
     }
   }
+  //Gera um código que serve de nome temporário para o arquivo de imagem
   async generateRandomString(length) {
     return randomBytes(length).toString('hex').slice(0, length)
   }

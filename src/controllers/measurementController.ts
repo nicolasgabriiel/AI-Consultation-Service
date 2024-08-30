@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Delete, Post, Body, Patch, Query } from '@nestjs/common'
+import { Controller, Get, Param, Post, Body, Patch, Query } from '@nestjs/common'
 import { MeasurementService } from '../services/MeasurementService'
 import { Measurement } from 'src/entities/Measurement'
 import { ImageService } from 'src/services/ImageService'
@@ -11,21 +11,19 @@ export class MeasurementController {
     private imageService: ImageService
   ) {}
 
+  //Retorna umas lista com todos os Measurements
   @Get()
   findAll() {
     return this.measurementService.findAll()
   }
 
+  // Retorna um Measure filtrado por ID
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.measurementService.findOne(+id)
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.measurementService.remove(+id)
-  }
-
+  //Faz a criação de um novo Measure
   @Post()
   async create(@Body() measurementData: Measurement): Promise<any> {
     const newMeasurement = await this.measurementService.add(measurementData)
@@ -36,6 +34,7 @@ export class MeasurementController {
     }
   }
 
+  //Confirma o measure_value
   @Patch()
   async confirm(@Body() measureConfirm: ConfirmationMeasure): Promise<any> {
     if (await this.measurementService.confirm(measureConfirm)) {
@@ -45,6 +44,7 @@ export class MeasurementController {
     }
   }
 
+  //Retorna uma lista de measurements de acordo com customer code e/ou measure type
   @Get('/:customer_code/list')
   async listMeasures(
     @Param('customer_code') customerCode: string,
