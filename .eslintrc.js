@@ -21,5 +21,17 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'off',
+    'prettier/prettier': [
+      'error',
+      {
+        printWidth: 120,
+        singleQuote: true,
+        trailingComma: 'none',
+        arrowParens: 'avoid',
+        endOfLine: 'auto',
+      },
+    ],
+    'newline-per-chained-call': 'off', // Se essa regra existir, desabilite
+    'object-curly-newline': 'off',
   },
 };

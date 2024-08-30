@@ -5,11 +5,11 @@ import { ConfigModule } from '@nestjs/config'
 
 import { TypeOrmModule } from '@nestjs/typeorm'
 import { Measurement } from './entities/Measurement'
-import { MeasurementService } from './services/MeasurementService'
 import { MeasurementController } from './controllers/MeasurementController'
 import { ImageService } from './services/ImageService'
-import { ApiService } from './services/ApiService'
 import { HttpModule } from '@nestjs/axios'
+import { ApiService } from './services/ApiService'
+import { MeasurementService } from './services/MeasurementService'
 
 @Module({
   imports: [
@@ -30,12 +30,6 @@ import { HttpModule } from '@nestjs/axios'
     TypeOrmModule.forFeature([Measurement])
   ],
   controllers: [AppController, MeasurementController],
-  providers: [
-    AppService,
-    MeasurementService,
-    ImageService,
-    ApiService,
-    ApiService
-  ]
+  providers: [AppService, MeasurementService, ImageService, ApiService]
 })
 export class AppModule {}

@@ -1,16 +1,6 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Delete,
-  Post,
-  Body,
-  BadRequestException,
-  HttpCode
-} from '@nestjs/common'
+import { Controller, Get, Param, Delete, Post, Body, Patch } from '@nestjs/common'
 import { MeasurementService } from '../services/MeasurementService'
 import { Measurement } from 'src/entities/Measurement'
-import { MeasureType } from 'src/entities/enums/MeasureType'
 import { ImageService } from 'src/services/ImageService'
 
 @Controller('measure')
@@ -36,68 +26,26 @@ export class MeasurementController {
   }
 
   @Post()
-  @HttpCode(200)
   async create(@Body() measurementData: Measurement): Promise<any> {
-    const measureType =
-      MeasureType[
-        measurementData.measureType as unknown as keyof typeof MeasureType
-      ]
+    const newMeasurement = await this.measurementService.add(measurementData)
+    return {
+      image_url: newMeasurement.image_url,
+      measure_value: newMeasurement.measure_value,
+      measure_uuid: newMeasurement.measure_uuid
+    }
+  }
 
-    measurementData.measureType = measureType
-    if (this.verifyMeasurementData(measurementData)) {
-      // processImage(MeasurementData.image, measurementData.customerCode)
-
-      const newMeasurement =
-        await this.imageService.processImage(measurementData)
-
-      this.measurementService.add(newMeasurement)
+  @Patch()
+  async confirm(@Body() measureConfirm: ConfirmationMeasure): Promise<any> {
+    if (await this.measurementService.confirm(measureConfirm)) {
       return {
-        image_url: newMeasurement.imageUrl,
-        measure_value: newMeasurement.measureValue,
-        measure_uuid: newMeasurement.measureUuid
+        sucess: true
       }
     }
   }
+}
 
-  verifyMeasurementData(measurementData: Partial<Measurement>) {
-    // 1. Validar dados
-    const { image, customerCode, measureDatetime, measureType } =
-      measurementData
-
-    if (typeof measureType === 'undefined') {
-      throw new BadRequestException({
-        statusCode: 400,
-        errorCode: 'INVALID_MEASURE_TYPE',
-        message: 'Measure Type informado é inválido'
-      })
-    }
-
-    if (!image || !customerCode || !measureDatetime || !measureType) {
-      throw new BadRequestException({
-        statusCode: 400,
-        errorCode: 'INVALID_DATA',
-        message: 'Os dados fornecidos no corpo da requisição são inválidos'
-      })
-    }
-
-    const base64Pattern = /^data:image\/(png|jpg|jpeg);base64,/
-    if (!base64Pattern.test(image)) {
-      throw new BadRequestException({
-        statusCode: 400,
-        errorCode: 'INVALID_DATA',
-        message: 'Formato de Imagem Inválido'
-      })
-    }
-
-    if (![MeasureType.WATER, MeasureType.GAS].includes(measureType)) {
-      throw new BadRequestException({
-        statusCode: 400,
-        errorCode: 'INVALID_DATA',
-        message:
-          'Formato de medição inválido, só são aceitos dois valores: WATER e GAS'
-      })
-    } else {
-      return true
-    }
-  }
+export interface ConfirmationMeasure {
+  measure_uuid: string
+  confirmed_value: number
 }

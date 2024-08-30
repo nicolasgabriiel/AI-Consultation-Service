@@ -8,17 +8,18 @@ export class Measurement {
   @Column({ type: 'text' })
   image: string
   @Column({ type: 'varchar', length: 255 })
-  customerCode: string
+  customer_code: string
   @Column({ type: 'timestamp' })
-  measureDatetime: Date
+  measure_datetime: Date
   @Column({ type: 'enum', enum: MeasureType })
-  measureType: MeasureType
+  measure_type: MeasureType
   @Column({ type: 'text', nullable: true })
-  imageUrl?: string
+  image_url?: string
   @Column({ type: 'float', nullable: true })
-  measureValue?: number
+  measure_value?: number
   @Column({ type: 'uuid', nullable: true })
-  measureUuid?: string
+  measure_uuid?: string
   @Column({ default: false })
-  confirmated: boolean
+  has_confirmed: boolean
+  internal_file_path?: string
 }
