@@ -1,85 +1,132 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# AI CONSULTATION SERVICE
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+[![NPM](https://img.shields.io/npm/l/react)](https://github.com/nicolasgabriiel/AI-Consultation-Service/blob/main/LICENSE)
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+# Sobre o projeto
 
-## Description
+Este projeto é back-end de um serviço de leitura de imagens. São 3 três endpoints e uma integração com a API do Google Gemini. O serviço gerencia a leitura individualizada de consumo de água e gás. Para facilitar a coleta da informação, o serviço utiliza IA para
+obter a medição através da foto de um medidor.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+# Modelo conceitual
 
-## Project setup
+![Modelo Conceitual](https://uploaddeimagens.com.br/images/004/837/266/original/conceitualmodel.png?1725055486)
+
+![Modelo Conceitual](https://uploaddeimagens.com.br/images/004/837/283/original/diagrama.png?1725056475)
+
+# Exemplos de Requisições
+
+<H3>URL para requisições: <b>${baseUrl}/measure</b></H3>
+
+## POST
+
+Responsável por receber uma imagem em base 64, consultar o Gemini e retornar a
+medida lida pela API
+
+<H3>O corpo da requisição deve conter:</H3>
+
+<pre>
+{
+ "image": "base64",
+ "customer_code": "string",
+ "measure_datetime": "datetime",
+ "measure_type": "WATER" ou "GAS"
+  }
+</pre>
+
+<H3>A resposta será algo como:</H3>
+<pre>
+{
+ “image_url”: string,
+ “measure_value”:integer,
+ “measure_uuid”: string
+}
+</pre>
+
+## PATCH
+
+Responsável por confirmar ou corrigir o valor lido pelo LLM
+
+<H3>O corpo da requisição deve conter:</H3>
+
+<pre>
+{
+ "measure_uuid": "string",
+ "confirmed_value": integer
+}
+</pre>
+
+<H3>A resposta será algo como:</H3>
+<pre>
+{
+ “success”: true
+}
+</pre>
+
+## GET/${customer_code}/list
+
+Responsável por listar as medidas realizadas por um determinado cliente. Ele opcionalmente pode receber um query parameter “measure_type”, que
+deve ser “WATER” ou “GAS”
+
+<H3>Como a requisição deve parecer:</H3>
+<b>Ex. {base url}/${customer_code}/list?measure_type=WATER</b>
+
+<H3>Ela irá retornar uma lista com todas as leituras realizadas.</H3>
+<pre>
+{
+ “customer_code”: string,
+ “measures”: [
+ {
+ “measure_uuid”: string,
+ “measure_datetime”: datetime,
+ “measure_type”: string,
+ “has_confirmed”:boolean,
+ “image_url”: string
+ },
+ {
+ “measure_uuid”: string,
+ “measure_datetime”: datetime,
+ “measure_type”: string,
+ “has_confirmed”:boolean,
+ “image_url”: string
+ }
+ ]
+}
+</pre>
+
+# Tecnologias utilizadas
+
+- Node.js
+- TypeScript
+- Nest.JS
+- Docker
+- PostgreSQL
+- [Gemini API](https://ai.google.dev/gemini-api/docs/vision?hl=pt-br&lang=node)
+
+# Como executar o projeto
+
+Pré-requisitos: Docker e [Gemini API Key](https://ai.google.dev/gemini-api/docs/api-key)
 
 ```bash
-$ npm install
+# clonar repositório
+git clone https://github.com/nicolasgabriiel/AI-Consultation-Service
+
+# executar o projeto em um container docker
+docker compose up
 ```
 
-## Compile and run the project
+Para o projeto funcionar é necessário criar um arquivo .env na pasta raiz do projeto e colocar a sua API Key do google gemini exatamente da maneira do exemplo a seguir:
 
-```bash
-# development
-$ npm run start
+<b>GEMINI_API_KEY=sua_chave_aqui</b>
 
-# watch mode
-$ npm run start:dev
+Depois que os contêineres estiverem funcionando, você pode acessar o aplicativo NestJS visitando http://localhost:3000 no navegador e o pgAdmin visitando http://localhost:5050 no navegador. Os dados de acesso do pgAdmin são:
 
-# production mode
-$ npm run start:prod
-```
+- admin@admin.com
+- pgadmin4
 
-## Run tests
+Se quiser você pode alterar esses e outros dados no arquivo docker-compose.yml
 
-```bash
-# unit tests
-$ npm run test
+# Autor
 
-# e2e tests
-$ npm run test:e2e
+Nicolas Gabriel da Silva
 
-# test coverage
-$ npm run test:cov
-```
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+https://www.linkedin.com/in/nicolasgabriiel/
