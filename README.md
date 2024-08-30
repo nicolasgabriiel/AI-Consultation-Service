@@ -118,12 +118,30 @@ Para o projeto funcionar é necessário criar um arquivo .env na pasta raiz do p
 
 <b>GEMINI_API_KEY=sua_chave_aqui</b>
 
-Depois que os contêineres estiverem funcionando, você pode acessar o aplicativo NestJS visitando http://localhost:3000 no navegador e o pgAdmin visitando http://localhost:5050 no navegador. Os dados de acesso do pgAdmin são:
+Depois que os contêineres estiverem funcionando, você pode acessar o aplicativo NestJS visitando http://localhost:3000 no navegador e o pgAdmin visitando http://localhost:5050 no navegador.
 
-- admin@admin.com
-- pgadmin4
+# Configurando o pgAdmin e o PostgreSQL Server
 
-Se quiser você pode alterar esses e outros dados no arquivo docker-compose.yml
+Para conectar ao servidor PostgreSQL do PgAdmin, precisamos criar um objeto de servidor no PgAdmin com os detalhes do servidor PostgreSQL.
+
+Aqui estão os passos para criar um servidor no PgAdmin:
+
+- Abra o PgAdmin no navegador da web visitando http://localhost:5050 (assumindo que você está usando a configuração padrão no docker-compose.yml).
+- Efetue login usando o e-mail e senha que estão no docker-compose:
+- email: admin@admin.com
+- senha: pgadmin4
+- Na barra lateral esquerda, clique com o botão direito em Servers e selecione Register -> Server.
+- Na aba General, pode dar ao servidor um nome de sua escolha.
+- Na aba Connection, preencha os seguintes dados:
+  Host name/ adress: db
+  Port: 5432
+  Maintenance database: postgres
+  Username: postgres
+  Password: postgres
+  Clique em Save para salvar a configuração do servidor.
+- Nota: Como o servidor PostgreSQL está sendo executado em um contêiner Docker, o nome do host/endereço seria o nome do serviço Docker para o contêiner do banco de dados, conforme definido no docker-compose.yml arquivo. Por padrão, o nome do serviço se torna o nome do host/endereço do contêiner dentro da rede Docker.
+
+Agora devemos ver o servidor que criamos na barra lateral esquerda do PgAdmin. Podemos expandir o servidor para ver os bancos de dados e outros objetos dentro dele.
 
 # Autor
 
