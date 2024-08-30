@@ -19,7 +19,7 @@ export class ImageService {
     fs.writeFileSync(filePath, buffer)
 
     console.log(filePath)
-    return this.api.uploadImage(measure, filePath)
+    return this.api.sendImageForGemini(measure, filePath)
   }
   async deleteImage(filePath: string) {
     try {

@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common'
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common'
 
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
@@ -35,16 +35,16 @@ export class MeasurementService {
     const { image, customer_code, measure_datetime, measure_type } = measurementData
 
     if (!image || !customer_code || !measure_datetime || !measure_type) {
-      this.defaultBadRequestException(400, 'INVALID_DATA', 'Os dados fornecidos no corpo da requisição são inválidos')
+      this.defaultHttpException(400, 'INVALID_DATA', 'Os dados fornecidos no corpo da requisição são inválidos')
     }
 
     const base64Pattern = /^data:image\/(png|jpg|jpeg);base64,/
     if (!base64Pattern.test(image)) {
-      this.defaultBadRequestException(400, 'INVALID_DATA', 'Formato de Imagem Inválido')
+      this.defaultHttpException(400, 'INVALID_DATA', 'Formato de Imagem Inválido')
     }
 
     if (typeof measure_type === 'undefined' || ![MeasureType.WATER, MeasureType.GAS].includes(measure_type)) {
-      this.defaultBadRequestException(400, 'INVALID_MEASURE_TYPE ', ' O Measure Type Informado é inválido')
+      this.defaultHttpException(400, 'INVALID_MEASURE_TYPE ', ' O Measure Type Informado é inválido')
     }
 
     const measureList = await this.findAll()
@@ -54,7 +54,7 @@ export class MeasurementService {
         item.measure_datetime.getMonth() == measure_datetime.getMonth() &&
         item.measure_type == measure_type
       ) {
-        this.defaultBadRequestException(409, 'DOUBLE_REPORT', ' Já existe uma leitura para este tipo no mês atual')
+        this.defaultHttpException(409, 'DOUBLE_REPORT', ' Já existe uma leitura para este tipo no mês atual')
       }
     }
 
@@ -69,7 +69,7 @@ export class MeasurementService {
       const measure = this.measurementRepo.create(newMeasurement)
       return this.measurementRepo.save(measure)
     } catch (error) {
-      this.defaultBadRequestException(500, 'INTERNAL_SERVER_ERROR', 'INTERNAL SERVER ERROR')
+      this.defaultHttpException(500, 'INTERNAL_SERVER_ERROR', 'INTERNAL SERVER ERROR')
       console.log(error)
     }
   }
@@ -85,26 +85,47 @@ export class MeasurementService {
   async findOneByUuid(measure_uuid: string): Promise<Measurement | null> {
     const measure = this.measurementRepo.findOneBy({ measure_uuid })
     if (!measure) {
-      this.defaultBadRequestException(404, 'MEASURE_NOT_FOUND', 'Leitura não encontrada')
+      this.defaultHttpException(404, 'MEASURE_NOT_FOUND', 'Leitura não encontrada')
     }
     return measure
   }
 
   async confirm(measureConfirm: ConfirmationMeasure) {
     if (!measureConfirm.confirmed_value || !measureConfirm.measure_uuid) {
-      this.defaultBadRequestException(409, 'INVALID_DATA', 'Os dados fornecidos no corpo da requisição são inválidos')
+      this.defaultHttpException(409, 'INVALID_DATA', 'Os dados fornecidos no corpo da requisição são inválidos')
     }
     if (!this.isUUIDv4(measureConfirm.measure_uuid)) {
-      this.defaultBadRequestException(400, 'INVALID_DATA', 'O código GUID é inválido')
+      this.defaultHttpException(400, 'INVALID_DATA', 'O código GUID é inválido')
     }
     const measure = await this.findOneByUuid(measureConfirm.measure_uuid)
 
     if (measure.has_confirmed == true) {
-      this.defaultBadRequestException(409, 'CONFIRMATION_DUPLICATE', 'Leitura do mês já realizada')
+      this.defaultHttpException(409, 'CONFIRMATION_DUPLICATE', 'Leitura do mês já realizada')
     }
     measure.measure_value = measureConfirm.confirmed_value
     measure.has_confirmed = true
     return await this.update(measure.id, measure)
+  }
+
+  async findMeasuresByCustomer(customerCode: string, measureType?: string): Promise<Measurement[]> {
+    if (measureType && !['WATER', 'GAS'].includes(measureType.toUpperCase())) {
+      this.defaultHttpException(400, 'INVALID_TYPE', 'Tipo de medição não permitida')
+    }
+    let measures = await this.findAllMeasuresForCustomer(customerCode)
+    if (measureType) {
+      const newMeasureType = MeasureType[measureType.toUpperCase() as keyof typeof MeasureType]
+      // eslint-disable-next-line prettier/prettier
+      measures = measures.filter((measure) => measure.measure_type === newMeasureType)
+    }
+    if (!measures || measures.length === 0) {
+      this.defaultHttpException(404, 'MEASURES_NOT_FOUND', 'Nenhuma leitura encontrada')
+    }
+
+    return measures
+  }
+
+  private async findAllMeasuresForCustomer(customer_code: string): Promise<Measurement[]> {
+    return this.measurementRepo.findBy({ customer_code })
   }
 
   createUuid(): string {
@@ -114,11 +135,13 @@ export class MeasurementService {
     return validate(uuid) && version(uuid) === 4
   }
 
-  defaultBadRequestException(statusCode: number, errorCode: string, message: string): void {
-    throw new BadRequestException({
-      statusCode: statusCode,
-      errorCode: errorCode,
-      message: message
-    })
+  defaultHttpException(HttpStatus: HttpStatus, errorCode: string, message: string): void {
+    throw new HttpException(
+      {
+        error_code: errorCode,
+        error_description: message
+      },
+      HttpStatus
+    )
   }
 }

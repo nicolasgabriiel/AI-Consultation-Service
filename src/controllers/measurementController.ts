@@ -1,7 +1,8 @@
-import { Controller, Get, Param, Delete, Post, Body, Patch } from '@nestjs/common'
+import { Controller, Get, Param, Delete, Post, Body, Patch, Query } from '@nestjs/common'
 import { MeasurementService } from '../services/MeasurementService'
 import { Measurement } from 'src/entities/Measurement'
 import { ImageService } from 'src/services/ImageService'
+import { MeasureType } from 'src/entities/enums/MeasureType'
 
 @Controller('measure')
 export class MeasurementController {
@@ -43,8 +44,27 @@ export class MeasurementController {
       }
     }
   }
-}
 
+  @Get('/:customer_code/list')
+  async listMeasures(
+    @Param('customer_code') customerCode: string,
+    @Query('measure_type') measureType?: string
+  ): Promise<any> {
+    const measures = await this.measurementService.findMeasuresByCustomer(customerCode, measureType)
+
+    return {
+      customer_code: customerCode,
+      // eslint-disable-next-line prettier/prettier
+      measures: measures.map((measure) => ({
+        measure_uuid: measure.measure_uuid,
+        measure_datetime: measure.measure_datetime,
+        measure_type: MeasureType[measure.measure_type],
+        has_confirmed: measure.has_confirmed,
+        image_url: measure.image_url
+      }))
+    }
+  }
+}
 export interface ConfirmationMeasure {
   measure_uuid: string
   confirmed_value: number

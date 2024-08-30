@@ -5,11 +5,11 @@ import { Measurement } from 'src/entities/Measurement'
 
 @Injectable()
 export class ApiService {
-  uploadImage = async (measure: Measurement, mediaPath: string): Promise<Measurement> => {
+  async sendImageForGemini(measure: Measurement, mediaPath: string): Promise<Measurement> {
     const fileManager = new GoogleAIFileManager(process.env.API_KEY)
     const uploadResult = await fileManager.uploadFile(`${mediaPath}`, {
       mimeType: 'image/jpeg',
-      displayName: 'testimg drawing'
+      displayName: 'imageForUpload'
     })
     console.log(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`)
 
@@ -25,12 +25,9 @@ export class ApiService {
       }
     ])
     console.log(result.response.text())
-    console.log(uploadResult.file.uri)
-    console.log(`${uploadResult.file.uri}?key=${process.env.API_KEY}`)
 
     measure.image_url = uploadResult.file.uri
     measure.measure_value = Number(result.response.text())
-
     measure.internal_file_path = mediaPath
 
     return measure
