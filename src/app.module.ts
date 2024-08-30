@@ -19,11 +19,11 @@ import { MeasurementService } from './services/MeasurementService'
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST,
+      host: 'db',
       port: 5432,
-      username: process.env.DB_USER,
-      password: process.env.DB_PASS,
-      database: process.env.DB_NAME,
+      username: 'postgres',
+      password: 'postgres',
+      database: 'postgres',
       entities: [Measurement],
       synchronize: true // Sincroniza o schema do banco com as entidades, útil em desenvolvimento
     }),
